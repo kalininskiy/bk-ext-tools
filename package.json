@@ -1,0 +1,98 @@
+{
+  "name": "bk-ext-tools",
+  "displayName": "BK Preprocessor Tools",
+  "description": "BK Preprocessor Tools (Preprocessor + Send)",
+  "version": "0.0.1",
+  "publisher": "kalininskiy",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kalininskiy/bk-ext-tools.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "icon": "images/bkfocal.png",
+  "categories": [
+    "Other",
+    "Debuggers"
+  ],
+  "keywords": [
+    "bk-0010",
+    "бк",
+    "focal",
+    "vilnius basic",
+    "preprocessor",
+    "emulator",
+    "retro"
+  ],
+  "activationEvents": [
+    "onCommand:bktools.buildAndSend"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bktools.buildAndSend",
+        "title": "BK: Build & Send (Auto detect language)",
+        "category": "BK Tools"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "bktools.buildAndSend",
+        "key": "ctrl+alt+r"
+      }
+    ],
+    "configuration": {
+      "title": "BK-0010 Tools",
+      "properties": {
+        "bktools.preprocessorPath": {
+          "type": "string",
+          "default": "",
+          "description": "Путь к папке с BkPreprocessors (где лежат BkBasicPreprocessor.exe и BkFocalPreprocessor.exe)"
+        },
+        "bktools.sendUtilsPath": {
+          "type": "string",
+          "default": "",
+          "description": "Путь к папке с BkTapePortUtils (BkSendBasic.exe, BkSendFocal.exe)"
+        },
+        "bktools.emulatorPath": {
+          "type": "string",
+          "default": "C:\\GID_x64\\Bin",
+          "description": "Путь к папке BIN эмулятора (для отправки .bin)"
+        },
+        "bktools.defaultSilentLen": {
+          "type": "number",
+          "default": 3,
+          "description": "Длина тишины в секундах при генерации WAV"
+        }
+      }
+    },
+    "problemMatchers": [
+      {
+        "name": "$bktools-preprocessor",
+        "owner": "bktools",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": {
+          "regexp": "^(?:Error|Warning|Ошибка|Предупреждение)\\s*[:\\s]+(.*?)\\s+(?:at|в)\\s+line\\s+(\\d+)",
+          "message": 1,
+          "line": 2
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.130",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}

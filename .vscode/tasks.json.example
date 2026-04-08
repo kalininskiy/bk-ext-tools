@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "BK: Build & Send (Auto)",
+      "type": "shell",
+      "command": "${command:bktools.buildAndSend}",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$bktools-preprocessor"]
+    },
+    {
+      "label": "BK: Build Basic only",
+      "type": "shell",
+      "command": "BkBasicPreprocessor.exe",
+      "args": ["${file}", "${fileDirname}/${fileBasenameNoExtension}.tmp", "/packnames=true", "/stripspaces=true", "/autonumlines=true"],
+      "options": { "cwd": "${config:bktools.preprocessorPath}" },
+      "group": "build",
+      "problemMatcher": ["$bktools-preprocessor"]
+    },
+    {
+      "label": "BK: Build Focal only",
+      "type": "shell",
+      "command": "BkFocalPreprocessor.exe",
+      "args": ["${file}", "${fileDirname}/${fileBasenameNoExtension}.tmp", "/packnames=true"],
+      "options": { "cwd": "${config:bktools.preprocessorPath}" },
+      "group": "build",
+      "problemMatcher": ["$bktools-preprocessor"]
+    }
+  ],
+  "problemMatchers": [
+    {
+      "name": "$bktools-preprocessor",
+      "owner": "bktools",
+      "fileLocation": ["relative", "${workspaceFolder}"],
+      "pattern": {
+        "regexp": "^(Error|Warning|Ошибка|Предупреждение)\\s*[:\\s]+(.*)\\s+at\\s+line\\s+(\\d+)",
+        "severity": 1,
+        "message": 2,
+        "line": 3
+      }
+    }
+  ]
+}
