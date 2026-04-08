@@ -1,4 +1,4 @@
-# BK-0010 Tools
+# BK Preprocessor Tools Extention
 
 Инструменты для БК-0010: препроцессоры (Basic + Focal) + отправка в эмулятор / WAV для БК.
 
