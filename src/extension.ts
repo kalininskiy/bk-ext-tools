@@ -120,7 +120,8 @@ async function buildAndSendBasic(document: vscode.TextDocument, format: string) 
     logCommand('BkBasicPreprocessor', ppCommand);
 
     try {
-        await execAsync(ppCommand);
+        const workDir = path.dirname(filePath);
+        await execAsync(ppCommand, workDir);
         console.log(`[BK-Tools] Препроцессор Basic завершён. tmpFile = ${tmpFile}`);
         vscode.window.showInformationMessage(`Basic обработан ${hasNumbers ? '(нумерация уже есть)' : '(добавлена нумерация)'}`);
 
@@ -142,7 +143,8 @@ async function buildAndSendFocal(filePath: string, format: string) {
     logCommand('BkFocalPreprocessor', ppCommand);
 
     try {
-        await execAsync(ppCommand);
+        const workDir = path.dirname(filePath);
+        await execAsync(ppCommand, workDir);
         console.log(`[BK-Tools] Препроцессор Focal завершён успешно. tmpFile = ${tmpFile}`);
         vscode.window.showInformationMessage(`Focal обработан → ${tmpFile}`);
 
@@ -168,7 +170,8 @@ async function sendBasic(tmpFile: string, format: string, name: string) {
     logCommand('BkSendBasic', command);
 
     try {
-        await execAsync(command);
+        const workDir = path.dirname(tmpFile);
+        await execAsync(command, workDir);
         console.log(`[BK-Tools] Отправка Basic завершена успешно (формат: ${format})`);
         vscode.window.showInformationMessage(`Basic отправлен в формате ${format}`);
     } catch (err: any) {
@@ -192,7 +195,8 @@ async function sendFocal(tmpFile: string, format: string, name: string) {
     logCommand('BkSendFocal', command);
 
     try {
-        await execAsync(command);
+        const workDir = path.dirname(tmpFile);
+        await execAsync(command, workDir);
         console.log(`[BK-Tools] Отправка Focal завершена успешно (формат: ${format})`);
         vscode.window.showInformationMessage(`Focal отправлен в формате ${format}`);
     } catch (err: any) {
@@ -201,9 +205,9 @@ async function sendFocal(tmpFile: string, format: string, name: string) {
     }
 }
 
-function execAsync(command: string): Promise<string> {
+function execAsync(command: string, cwd?: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        cp.exec(command, { encoding: 'utf8' }, (error, stdout, stderr) => {
+        cp.exec(command, { encoding: 'utf8', cwd: cwd }, (error, stdout, stderr) => {
             if (error) {
                 reject(new Error(stderr || stdout || error.message));
             } else {

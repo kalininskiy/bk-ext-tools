@@ -2,7 +2,7 @@
   "name": "bk-ext-tools",
   "displayName": "BK Preprocessor Tools",
   "description": "BK Preprocessor Tools (Preprocessor + Send)",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "kalininskiy",
   "repository": {
     "type": "git",
