@@ -9,6 +9,7 @@
 - Поддержка `BkBasicPreprocessor` и `BkFocalPreprocessor`
 - Поддержка `BkSendBasic` / `BkSendFocal` (BIN / WAV / ASC)
 - Настраиваемые пути через Settings
+- Запуск эмулятора с автозагрузкой
 
 ## Установка
 
@@ -21,10 +22,10 @@
 
 Откройте **Settings** (`Ctrl+,`) → введите `bktools`:
 
-- `bktools.preprocessorPath` — путь к папке с `BkBasicPreprocessor.exe` и `BkFocalPreprocessor.exe`. Проект препроцессоров БК - [ссылка](https://github.com/tereshenkovav/BkPreprocessors).
-- `bktools.sendUtilsPath` — путь к папке с `BkSendBasic.exe` и `BkSendFocal.exe`. Проект утилит отправки файлов БК - [ссылка](https://github.com/tereshenkovav/BkTapePortUtils).
-- `bktools.emulatorPath` — путь к папке файлов BIN для эмулятора (например `C:\GID_x64\Bin`)
-- `bktools.defaultSilentLen` — тишина в секундах при создании WAV (по умолчанию 3)
+- Укажите пути к исполняемым файлам препроцессоров и к утилит отправки файлов БК. 
+- Проект препроцессоров БК - [ссылка](https://github.com/tereshenkovav/BkPreprocessors).
+- Проект утилит отправки файлов БК - [ссылка](https://github.com/tereshenkovav/BkTapePortUtils).
+- Так же укажите надо ли запускать эмулятор и установите тишину в секундах при создании WAV (по умолчанию 3)
 
 ## Использование
 
