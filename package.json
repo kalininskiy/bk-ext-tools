@@ -2,7 +2,7 @@
   "name": "bk-ext-tools",
   "displayName": "BK Preprocessor Tools",
   "description": "BK Preprocessor Tools (Preprocessor + Send)",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "kalininskiy",
   "repository": {
     "type": "git",
@@ -47,25 +47,45 @@
     "configuration": {
       "title": "BK-0010 Tools",
       "properties": {
-        "bktools.preprocessorPath": {
+        "bktools.basicPreprocessor": {
           "type": "string",
           "default": "",
-          "description": "Путь к папке с BkPreprocessors (где лежат BkBasicPreprocessor.exe и BkFocalPreprocessor.exe)"
+          "description": "Путь к BkBasicPreprocessor",
+          "markdownDescription": "Путь к BkBasicPreprocessor\n\n[Выбрать файл](command:bktools.pickBasicPreprocessor)"
         },
-        "bktools.sendUtilsPath": {
+        "bktools.focalPreprocessor": {
           "type": "string",
           "default": "",
-          "description": "Путь к папке с BkTapePortUtils (BkSendBasic.exe, BkSendFocal.exe)"
+          "description": "Путь к BkFocalPreprocessor",
+          "markdownDescription": "Путь к BkFocalPreprocessor\n\n[Выбрать файл](command:bktools.pickFocalPreprocessor)"
         },
-        "bktools.emulatorPath": {
+        "bktools.sendBasic": {
           "type": "string",
-          "default": "C:\\GID_x64\\Bin",
-          "description": "Путь к папке BIN эмулятора (для отправки .bin)"
+          "default": "",
+          "description": "Путь к BkSendBasic",
+          "markdownDescription": "Путь к BkSendBasic\n\n[Выбрать файл](command:bktools.pickSendBasic)"
+        },
+        "bktools.sendFocal": {
+          "type": "string",
+          "default": "",
+          "description": "Путь к BkSendFocal",
+          "markdownDescription": "Путь к BkSendFocal\n\n[Выбрать файл](command:bktools.pickSendFocal)"
+        },
+        "bktools.emulatorExecutable": {
+          "type": "string",
+          "default": "",
+          "description": "Путь к BK_x64.exe",
+          "markdownDescription": "Путь к BK_x64.exe\n\n[Выбрать файл](command:bktools.pickEmulator)"
         },
         "bktools.defaultSilentLen": {
           "type": "number",
           "default": 3,
           "description": "Длина тишины в секундах при генерации WAV"
+        },
+        "bktools.defaultStartEmulator": {
+          "type": "boolean",
+          "default": true,
+          "description": "Запуск эмулятора (с автозагрузкой, но без автозапуска) после генерации программы"
         }
       }
     },

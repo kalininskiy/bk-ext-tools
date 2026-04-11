@@ -1,19 +1,68 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as cp from 'child_process';
+import * as fs from 'fs';
 
 const config = vscode.workspace.getConfiguration('bktools');
 
-function getPreprocessorPath(tool: string): string {
-    const base = config.get<string>('preprocessorPath') || '';
-    if (!base) throw new Error('Не настроен путь к препроцессорам (bktools.preprocessorPath)');
-    return path.join(base, tool);
+async function pickExecutable(settingKey: string) {
+    const uri = await vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectFolders: false,
+        canSelectMany: false,
+        openLabel: 'Выбрать исполняемый файл'
+    });
+
+    if (!uri || uri.length === 0) return;
+
+    await config.update(settingKey, uri[0].fsPath, vscode.ConfigurationTarget.Global);
 }
 
-function getSendPath(tool: string): string {
-    const base = config.get<string>('sendUtilsPath') || '';
-    if (!base) throw new Error('Не настроен путь к BkTapePortUtils (bktools.sendUtilsPath)');
-    return path.join(base, tool);
+function getToolPath(setting: string, name: string): string {
+    const toolPath = config.get<string>(setting) || '';
+    if (!toolPath) {
+        throw new Error(`Не настроен путь к ${name} (${setting})`);
+    }
+    return toolPath;
+}
+
+function getBinDir(emuPath: string): string {
+    const dir = path.dirname(emuPath);
+    const binDir = path.join(dir, 'Bin');
+
+    if (!fs.existsSync(binDir)) {
+        fs.mkdirSync(binDir, { recursive: true });
+    }
+
+    return binDir;
+}
+
+function getScriptsDir(emuPath: string): string {
+    const dir = path.dirname(emuPath);
+    const scriptsDir = path.join(dir, 'Scripts');
+
+    if (!fs.existsSync(scriptsDir)) {
+        fs.mkdirSync(scriptsDir, { recursive: true });
+    }
+
+    return scriptsDir;
+}
+
+function createBkScript(emuPath: string, programName: string, isFocal: boolean) {
+    let content: string;
+
+    if (isFocal) {
+        content = `L G ${programName}\r\n`;
+    } else {
+        content = `LOAD "${programName}"\r\n`;
+    }
+
+    const scriptsDir = getScriptsDir(emuPath);
+    const scriptPath = path.join(scriptsDir, '_autorun.bkscript');
+
+    console.log(`[BK-Tools] Создание скрипта для эмулятора: ${scriptPath}`);
+
+    fs.writeFileSync(scriptPath, content, { encoding: 'utf8' });
 }
 
 async function selectFormat(): Promise<string> {
@@ -65,9 +114,24 @@ async function hasLineNumbers(document: vscode.TextDocument): Promise<boolean> {
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('=== BK-0010 Tools активировано ===');
-    console.log('Preprocessor path:', config.get<string>('preprocessorPath'));
-    console.log('SendUtils path:', config.get<string>('sendUtilsPath'));
-    console.log('Emulator path:', config.get<string>('emulatorPath'));
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand("bktools.pickBasicPreprocessor", () =>
+            pickExecutable("basicPreprocessor"),
+        ),
+        vscode.commands.registerCommand("bktools.pickFocalPreprocessor", () =>
+            pickExecutable("focalPreprocessor"),
+        ),
+        vscode.commands.registerCommand("bktools.pickSendBasic", () =>
+            pickExecutable("sendBasic"),
+        ),
+        vscode.commands.registerCommand("bktools.pickSendFocal", () =>
+            pickExecutable("sendFocal"),
+        ),
+        vscode.commands.registerCommand("bktools.pickEmulator", () =>
+            pickExecutable("emulatorExecutable"),
+        ),
+    );
 
     let disposable = vscode.commands.registerCommand('bktools.buildAndSend', async () => {
         const editor = vscode.window.activeTextEditor;
@@ -88,7 +152,7 @@ export function activate(context: vscode.ExtensionContext) {
         console.log(`   Расширение: ${ext}`);
         console.log(`   Выбран формат: ${format}`);
 
-        if (['.bas', '.bvk', '.vil', '.bk'].includes(ext)) {
+        if (['.bas', '.bvk', '.vil', '.bk', '.asc'].includes(ext)) {
             await buildAndSendBasic(document, format);
         } else if (['.foc', '.focal', '.bkf'].includes(ext)) {
             await buildAndSendFocal(filePath, format);
@@ -104,7 +168,7 @@ async function buildAndSendBasic(document: vscode.TextDocument, format: string) 
     const filePath = document.fileName;
     const tmpFile = filePath.replace(/\.\w+$/, '.tmp');
     const name = path.basename(filePath, path.extname(filePath)).toUpperCase();
-    const ppPath = getPreprocessorPath('BkBasicPreprocessor.exe');
+    const ppPath = getToolPath('basicPreprocessor', 'BkBasicPreprocessor');
 
     // Определяем, нужна ли авто-нумерация
     const hasNumbers = await hasLineNumbers(document);
@@ -135,7 +199,7 @@ async function buildAndSendBasic(document: vscode.TextDocument, format: string) 
 async function buildAndSendFocal(filePath: string, format: string) {
     const tmpFile = filePath.replace(/\.\w+$/, '.tmp');
     const name = path.basename(filePath, path.extname(filePath)).toUpperCase();
-    const ppPath = getPreprocessorPath('BkFocalPreprocessor.exe');
+    const ppPath = getToolPath('focalPreprocessor', 'BkFocalPreprocessor');
 
     const ppCommand = `"${ppPath}" "${filePath}" "${tmpFile}" /packnames=true`;
 
@@ -156,12 +220,18 @@ async function buildAndSendFocal(filePath: string, format: string) {
 }
 
 async function sendBasic(tmpFile: string, format: string, name: string) {
-    const sendPath = getSendPath('BkSendBasic.exe');
-    const emuPath = config.get<string>('emulatorPath') || '';
-    let command = `"${sendPath}" "${tmpFile}" "${emuPath}" /format=${format} /name=${name}`;
+    const sendPath = getToolPath('sendBasic', 'BkSendBasic');
+    const emuPath = config.get<string>('emulatorExecutable') || '';
+    const emuDir = path.dirname(emuPath);
+    const programName = name;
+    const binDir = getBinDir(emuPath);
+    const binPath = path.join(binDir, `${programName}.bin`);
+
+    let command = `"${sendPath}" "${tmpFile}" "${binDir}" /format=${format} /name=${name}`;
 
     if (format === 'WAV') {
-    	command = `"${sendPath}" "${tmpFile}" "${emuPath}\\${name}.wav" /format=${format} /name=${name}`;
+        const outFile = path.join(binDir, `${name}.wav`);
+        command = `"${sendPath}" "${tmpFile}" "${outFile}" /format=${format} /name=${name}`;
         const silentLen = config.get<number>('defaultSilentLen') || 3;
         command += ` /silentlen=${silentLen}`;
     }
@@ -174,6 +244,10 @@ async function sendBasic(tmpFile: string, format: string, name: string) {
         await execAsync(command, workDir);
         console.log(`[BK-Tools] Отправка Basic завершена успешно (формат: ${format})`);
         vscode.window.showInformationMessage(`Basic отправлен в формате ${format}`);
+        if (format === 'BIN') {
+            createBkScript(emuPath, programName, false);
+            await runEmulatorWithScript(false);
+        }
     } catch (err: any) {
         console.error(`[BK-Tools] Ошибка BkSendBasic:`, err.message);
         vscode.window.showErrorMessage(`Ошибка отправки Basic: ${err.message}`);
@@ -181,9 +255,14 @@ async function sendBasic(tmpFile: string, format: string, name: string) {
 }
 
 async function sendFocal(tmpFile: string, format: string, name: string) {
-    const sendPath = getSendPath('BkSendFocal.exe');
-    const emuPath = config.get<string>('emulatorPath') || '';
-    let command = `"${sendPath}" "${tmpFile}" "${emuPath}\\${name}.bin" /format=${format} /name=${name}`;
+    const sendPath = getToolPath('sendFocal', 'BkSendFocal');
+    const emuPath = config.get<string>('emulatorExecutable') || '';
+    const emuDir = path.dirname(emuPath);
+    const programName = name;
+    const binDir = getBinDir(emuPath);
+    const outFile = path.join(binDir, `${programName}.bin`);
+
+    let command = `"${sendPath}" "${tmpFile}" "${outFile}" /format=${format} /name=${programName}`;
 
     if (format === 'WAV') {
 		command = command.replace('.bin', '.wav');
@@ -199,10 +278,36 @@ async function sendFocal(tmpFile: string, format: string, name: string) {
         await execAsync(command, workDir);
         console.log(`[BK-Tools] Отправка Focal завершена успешно (формат: ${format})`);
         vscode.window.showInformationMessage(`Focal отправлен в формате ${format}`);
+
+        if (format === 'BIN') {
+            createBkScript(emuPath, programName, true);
+            await runEmulatorWithScript(true);
+        }
     } catch (err: any) {
         console.error(`[BK-Tools] Ошибка BkSendFocal:`, err.message);
         vscode.window.showErrorMessage(`Ошибка отправки Focal: ${err.message}`);
     }
+}
+
+async function runEmulatorWithScript(isFocal: boolean) {
+    const isEmulatorStartEnabled = config.get<boolean>('defaultStartEmulator') || false;
+    if (!isEmulatorStartEnabled) {
+        console.log(`[BK-Tools] Автоматический запуск эмулятора отключён в настройках.`);
+        return;
+    }
+
+    const emuExe = config.get<string>('emulatorExecutable');
+    if (!emuExe) {
+        throw new Error('Не задан путь к BK_x64.exe');
+    }
+
+    const profile = isFocal ? 'BK-0010-01_MSTD' : 'BK-0010-01';
+
+    const cmd = `"${emuExe}" /C "${profile}" /S "_autorun.bkscript"`;
+
+    console.log(`[BK-Tools] Старт эмулятора: ${cmd}`);
+
+    await execAsync(cmd, path.dirname(emuExe));
 }
 
 function execAsync(command: string, cwd?: string): Promise<string> {
